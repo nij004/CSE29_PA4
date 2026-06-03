@@ -52,7 +52,7 @@ void parse_command(char *command, struct pish_arg *arg) {
     //strip the trailing newline
     command[strcspn(command, "\n")] = '\0';
 
-    char *token = strtok(command, "\t");
+    char *token = strtok(command, " \t");
     while (token != NULL && arg->argc < MAX_ARGC - 1) {
        arg->argv[arg->argc++] = token;
        token = strtok(NULL, " \t");
