@@ -27,6 +27,17 @@ void add_history(const struct pish_arg *arg) {
         set_history_path();
     }
     // TODO
+    FILE *fp = fopen(pish_history_path, "a");
+    if (fp == NULL) {
+        perror(pish_history_path);
+	return;
+    }
+    for (int i = 0; i < arg->argc; i++) {
+        if (i > 0) fprintf(fp, " ");
+	fprintf(fp, "%s", arg->argv[i]);
+    }
+    fprintf(fp, "\n");
+    fclose(fp);
 }
 
 /*
@@ -47,6 +58,17 @@ void print_history() {
         set_history_path();
     }
     // TODO
+    FILE *fp = fopen(pish_history_path, "r");
+    if (fp == NULL) {
+        perror(pish_history_path);
+	return;
+    }
+    char line[256];
+    int count = 1;
+    while (fgets(line, line[256], fp) != NULL) {
+        printf("%d %s", count++, line);
+    }
+    fclose(fp);
 }
 
 /*
@@ -57,4 +79,13 @@ void clear_history() {
         set_history_path();
     }
     // TODO
+    if (!(*pish_history_path)) {
+        set_history_path();
+    }
+    FILE *fp = fopen(pish_history_path, "w");
+    if (fp == NULL) {
+        perror(pish_history_path);
+	return;
+    }
+    fclose(fp);
 }

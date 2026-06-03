@@ -47,6 +47,17 @@ void usage_error(void) {
  */
 void parse_command(char *command, struct pish_arg *arg) {
     // TODO
+    arg->argc = 0;
+
+    //strip the trailing newline
+    command[strcspn(command, "\n")] = '\0';
+
+    char *token = strtok(command, "\t");
+    while (token != NULL && arg->argc < MAX_ARGC - 1) {
+       arg->argv[arg->argc++] = token;
+       token = strtok(NULL, " \t");
+    }
+    arg->argv[arg->argc] = NULL; // NULL-terminate for execvp
 }
 
 /*
@@ -60,6 +71,65 @@ void parse_command(char *command, struct pish_arg *arg) {
  */
 void run(struct pish_arg *arg) {
     // TODO
+    //If empty command, then do nothing
+    if (arg->argc == 0) {
+       return;
+    }
+
+    //Write to history, only in interactive mode
+    if (!script_mode) {
+       add_history(arg);
+    }
+
+    char *cmd = arg->argv[0];
+
+    //exit
+    if (strcmp(cmd, "exit") == 0) {
+        if (arg->argc != 1) {
+           usage_error();
+           return;
+        }
+        exit(EXIT_SUCCESS);
+    }
+
+    //change directory (cd)
+    else if (strcmp(cmd, "cd") == 0) {
+       if (arg->argc != 2) {
+          usage_error();
+          return;
+       }
+       //TODO: cd - to be added later
+       if (chdir(arg->argv[1]) != 0) {
+          perror("cd");
+       }
+    }
+
+    //history
+    else if (strcmp(cmd, "history") == 0) {
+       if (arg->argc == 1) {
+          print_history();
+       } else if (arg->argc == 2 && strcmp(arg->argv[1], "-c") == 0) {
+          clear_history();
+       } else {
+          usage_error();
+       }
+    }
+
+    //forc + exec
+    else{
+       pid_t pid = fork();
+       if (pid < 0) {
+          perror("fork");
+       } else if (pid == 0) {
+          //child process
+          execvp(cmd, arg->argv);
+          perror(cmd);  //only reached if execvp failed
+          exit(EXIT_FAILURE);
+       } else {
+          //parent proccess
+          wait(NULL);
+       }
+    }
 }
 
 /*
@@ -72,6 +142,17 @@ void run(struct pish_arg *arg) {
  */
 int pish(FILE *fp) {
     // TODO
+    char command[MAX_COMMAND_LENGTH];
+    struct pish_arg arg;
+
+    while (1) {
+       prompt();
+       if (fgets(command, MAX_COMMAND_LENGTH, fp) == NULL) {
+          exit(EXIT_SUCCESS);
+       }
+       parse_command(command, &arg);
+       run(&arg);
+    }
     return 0;
 }
 
@@ -87,5 +168,22 @@ int pish(FILE *fp) {
  */
 int main(int argc, char *argv[]) {
     // TODO
-    return EXIT_SUCCESS;
+    if (argc > 2) {
+    	usage_error();
+	return EXIT_FAILURE;
+    }
+
+    if (argc == 2) {
+    	script_mode = 1;
+	FILE *fp = fopen(argv[1], "r");
+	if (fp == NULL) {
+	   perror(argv[1]);
+	   return EXIT_FAILURE;
+	}
+	int result = pish(fp);
+	fclose(fp);
+	return result;
+    }
+
+    return pish(stdin);
 }
