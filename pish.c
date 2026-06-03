@@ -93,16 +93,35 @@ void run(struct pish_arg *arg) {
     }
 
     //change directory (cd)
-    else if (strcmp(cmd, "cd") == 0) {
-       if (arg->argc != 2) {
-          usage_error();
-          return;
-       }
-       //TODO: cd - to be added later
-       if (chdir(arg->argv[1]) != 0) {
-          perror("cd");
-       }
-    }
+	else if (strcmp(cmd, "cd") == 0) {
+	    if (arg->argc != 2) {
+	        usage_error();
+	        return;
+	    }
+	    static char prev_dir[1024] = {'\0'};
+	    char curr_dir[1024];
+	    getcwd(curr_dir, sizeof(curr_dir));
+	
+	    if (strcmp(arg->argv[1], "-") == 0) {
+	        // If no previous cd, print and stay in current dir
+	        if (prev_dir[0] == '\0') {
+	            printf("%s\n", curr_dir);
+	        } else {
+	            printf("%s\n", prev_dir);
+	            char tmp[1024];
+	            strncpy(tmp, prev_dir, sizeof(tmp));
+	            strncpy(prev_dir, curr_dir, sizeof(prev_dir));
+	            if (chdir(tmp) != 0) {
+	                perror("cd");
+	            }
+	        }
+	    } else {
+	        strncpy(prev_dir, curr_dir, sizeof(prev_dir));
+	        if (chdir(arg->argv[1]) != 0) {
+	            perror("cd");
+	        }
+	    }
+	}
 
     //history
     else if (strcmp(cmd, "history") == 0) {
