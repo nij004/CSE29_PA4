@@ -61,11 +61,11 @@ void print_history() {
     FILE *fp = fopen(pish_history_path, "r");
     if (fp == NULL) {
         perror(pish_history_path);
-	return;
+		return;
     }
-    char line[256];
-    int count = 1;
-    while (fgets(line, line[256], fp) != NULL) {
+	char line[256] = {'\0'};
+	int count = 1;
+	while (fgets(line, 256, fp) != NULL) {
         printf("%d %s", count++, line);
     }
     fclose(fp);
